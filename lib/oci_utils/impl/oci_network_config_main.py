@@ -124,6 +124,28 @@ def def_show_parser(s_parser):
     return show_parser
 
 
+def def_show_os_parser(s_parser):
+    """
+    Define the show_os subparser.
+
+    Parameters
+    ----------
+    s_parser: subparsers.
+
+    Returns
+    -------
+        ArgumentParser: the show subcommand parser.
+    """
+    show_os_parser = s_parser.add_parser('show-os',
+                                      description='Display the current network interface configuration as well as the VNIC configuration from OCI.',
+                                      help='Display the current network interface configuration as well as the VNIC configuration from OCI.')
+    show_os_parser.add_argument('--output-mode',
+                             choices=('parsable', 'table', 'json', 'text'),
+                             help='Set output mode.',
+                             default='table')
+    return show_os_parser
+
+
 def def_show_vnics_parser(s_parser):
     """
     Define the show_vnics subparser
@@ -532,6 +554,9 @@ def get_arg_parser():
     #
     # show
     _ = def_show_parser(subparser)
+    #
+    # show-os
+    _ = def_show_os_parser(subparser)
     #
     # show-vnics
     _ = def_show_vnics_parser(subparser)
@@ -1002,6 +1027,25 @@ def update_network_config(nw_conf):
     return nw_conf
 
 
+def do_show_os_network_config(show_args):
+    """
+    Display the current network interface configuration as well as the VNIC configuration from OCI.
+
+    Parameters
+    ----------
+    show_args: namespace
+        The command line arguments.
+
+    Returns
+    -------
+        int: 0 on success, 1 otherwise.
+    """
+    _logger.debug('%s', where_am_i())
+    vnic_utils = get_vnic_utils(show_args)
+    show_os_network_config(vnic_utils, show_args.output_mode)
+    return 0
+
+
 def show_os_network_config(vnic_utils, mode):
     """
     Display the current network interface configuration as well as the VNIC configuration from OCI.
@@ -1011,7 +1055,7 @@ def show_os_network_config(vnic_utils, mode):
     vnic_utils :
         The VNIC configuration instance.
 
-    mode :
+    mode : str
         The output mode
 
     Returns
@@ -2041,6 +2085,7 @@ def main():
     """
     sub_commands = {'usage': show_usage,
                     'show': show_network,
+                    'show-os': do_show_os_network_config,
                     'show-vnics': show_vnics,
                     'show-vnics-all': show_vnics_all,
                     'show-vcns': show_vcns,
