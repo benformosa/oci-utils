@@ -23,6 +23,7 @@ from oci_utils.impl.network_helpers import is_valid_ip_address
 from oci_utils.impl.oci_resources import OCIVNIC
 from oci_utils.impl.row_printer import TablePrinter
 from oci_utils.impl.row_printer import TextPrinter
+from oci_utils.impl.row_printer import get_row_printer_impl
 from oci_utils.impl.row_printer_helpers import IndentPrinter
 from oci_utils.impl.row_printer_helpers import get_value_data
 from oci_utils.impl.row_printer_helpers import initialise_column_lengths
@@ -1001,7 +1002,7 @@ def update_network_config(nw_conf):
     return nw_conf
 
 
-def show_os_network_config(vnic_utils):
+def show_os_network_config(vnic_utils, mode):
     """
     Display the current network interface configuration as well as the VNIC configuration from OCI.
 
@@ -1009,6 +1010,9 @@ def show_os_network_config(vnic_utils):
     ----------
     vnic_utils :
         The VNIC configuration instance.
+
+    mode :
+        The output mode
 
     Returns
     -------
@@ -1034,8 +1038,8 @@ def show_os_network_config(vnic_utils):
                 ['STATE', 6, 'STATE'],
                 ['MAC', 18, 'MAC'],
                 ['VNIC ID', 95, 'VNIC'])
-    printer = TablePrinter(title=_title, columns=_columns, column_separator=' ', text_truncate=False)
-
+    printerKlass = get_row_printer_impl(mode)
+    printer = printerKlass(title=_title, columns=_columns, text_truncate=False)
     printer.printHeader()
     for item in ret:
         printer.printRow(item)
@@ -1062,8 +1066,7 @@ def show_network(show_args):
     network_config = vnic_utils.get_network_config()
     network_config = update_network_config(network_config)
     #
-    # for compatibility mode, oci-network-config show should provide the same output as oci-network-config --show;
-    # if output-mode is specified, compatiblity requirement is dropped.
+    # for compatibility mode (when compat-ouptut is set), oci-network-config show should provide the same output as oci-network-config --show;
     showerror = False
     if show_args.compat_output:
         compat_show_vnics_information()
@@ -1074,8 +1077,8 @@ def show_network(show_args):
             _logger.debug('Cannot show information', exc_info=True)
             _logger.error('Cannot show information: %s', str(e))
             showerror = True
-    if show_args.output_mode == 'table':
-        show_os_network_config(vnic_utils)
+    if not show_args.compat_output:
+        show_os_network_config(vnic_utils, show_args.output_mode)
     return False if showerror else True
 
 
